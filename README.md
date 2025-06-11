@@ -1,10 +1,14 @@
-# IDEA9103_zdon0984_personal
+# Project of zdon0984
+
+![描述信息](asset/image2.png)
 
 ## Audio-related animation of apple tree
 
 ### New Features introduction
 
 #### The music playback and timeline functions are mainly implemented through various mouse commands. Specific interactions have been handled for mouse hover and click events on buttons, allowing users to control the entire webpage.
+
+
 
 #### For animations, they are essentially set according to the music playback timeline. From the growth of the apples to their eventual fall, every stage is closely tied to changes in the music.
 #### The main functions used include:
