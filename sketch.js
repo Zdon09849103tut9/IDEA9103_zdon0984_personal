@@ -238,7 +238,8 @@ function draw() {
     noStroke();
     textSize(18);
     textAlign(CENTER, BOTTOM);
-    text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 2, windowHeight - 60);
+    // Inform users that the progress bar has a bug and is temporarily unavailable.
+    text("Notice: Progress bar has an unknown bug, please ignore.", windowWidth / 2, windowHeight - 60);
 
   }
 
