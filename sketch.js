@@ -1,7 +1,7 @@
+// Global Variables
 let circles = [];
 let rects = [];
 let halfCircles = [];
-
 let bgImage;
 let song;
 let amplitude;
@@ -11,6 +11,7 @@ let progressSlider;
 let isPlaying = false;
 let curTime = 0;
 
+// Design reference canvas size
 let baseWidth = 800;
 let baseHeight = 1300;
 let scaleFactor, offsetX, offsetY;
@@ -37,12 +38,18 @@ let snowStartTime = 20;
 let playState = "start"; // "start", "pause", "continue"
 let pausedAt = 0;
 
+// Preload Background Image
+// We used a picture of denim fabric to imitate the background of the "Apple Tree".
 function preload() {
   bgImage = loadImage("asset/image.png");
+
   song = loadSound("asset/mySong.mp3");
 }
 
-let rawData = [
+// Raw Data Definitions
+//In order to facilitate the adjustment of each graphic, we have extracted the parameters that need to be adjusted for each type.
+// SplitCircle format: [x, y, radius, angle (radians), leftRatio]
+let splitCircleRawData = [
   [104, 4, 50, Math.PI, 0.7], [74, 100, 50, 0, 0.6], [84, 185, 35, Math.PI, 0.5], [144, 220, 35, Math.PI * 3 / 2, 0.5], [179, 275, 30, 0, 0.5],
   [170, 350, 45, 0, 0.6], [175, 445, 50, Math.PI, 0.5], [251, 483, 35, Math.PI * 3 / 2, 0.4], [319, 497, 35, Math.PI / 2, 0.4],
   [384, 490, 30, Math.PI * 3 / 2, 0.5], [495, 305, 20, Math.PI, 0.4], [467, 340, 25, Math.PI / 2, 0.5], [320, 303, 20, Math.PI, 0.5],
@@ -54,6 +61,8 @@ let rawData = [
   [335, 1020, 25, Math.PI * 3 / 2, 0.5], [265, 1020, 45, Math.PI / 2, 0.5], [462, 1006, 35, Math.PI / 2, 0.7], [542, 1020, 45, Math.PI * 3 / 2, 0.5],
 ];
 
+
+// Half-circle format: [x, y, radius, fillColor, borderColor, borderWidth]
 let halfCircleRawData = [
   [185, 1138, 34, [109,173,123], [232, 92, 90], 0],
   [265, 1138, 44, [227, 197, 99], [83, 86, 101], 0],
@@ -63,6 +72,7 @@ let halfCircleRawData = [
   [606.5, 1138, 16, [109,173,123], [83, 86, 101], 0],
 ];
 
+// Rect format: [x, y, width, height, fillColor, borderColor, borderWidth]
 let rectRawData = [
   [0, 1040, 800, 120, [109, 173, 123], [62, 58, 47], 5],
   [146, 1020, 480, 120, [227, 197, 99], [62, 58, 47], 5],
@@ -76,13 +86,20 @@ let rectRawData = [
 ];
 
 function setup() {
+    // Create canvas based on window size
   createCanvas(windowWidth, windowHeight);
+    // Calculate scaling and translation
   setupTransform();
+    // Initialize half-circle objects
   setupHalfCircles();
+    // Initialize rectangle objects
   setupRects();
+    // Initialize split-circle objects
   setupCircles();
   amplitude = new p5.Amplitude();
 
+  // Setup music controls, UI, and amplitude analyzer. 
+// See: https://p5js.org/reference/#/p5/setup
   // Play/Pause/Continue button
   playButton = createButton("Start");
   playButton.position(20, 20);
@@ -133,7 +150,17 @@ function setup() {
   });
 
   // Progress Bar
+  // See: https://p5js.org/reference/#/p5.SoundFile/jump
   progressSlider = createSlider(0, 1, 0, 0.001);
+
+  /*I don't know what bug has occurred here.
+  I've been trying to fix it for a long time without success. 
+  When users drag the progress bar, all other animations pause,
+  but the music and Apple logo do not pause, which is very puzzling to me.
+  So fanilly I banned the progressslider
+  */ 
+  progressSlider.attribute("disabled", true);
+
   positionProgressSlider();
 
   progressSlider.input(onProgressInput);
@@ -174,6 +201,8 @@ function positionProgressSlider() {
   progressSlider.style('width', (windowWidth - 40) + 'px');
 }
 
+// Handle window resize (keeps layout consistent with screen)
+// See: https://p5js.org/reference/#/p5/windowResized
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   setupTransform();
@@ -184,6 +213,9 @@ function windowResized() {
 
 let userIsDragging = false;
 
+
+// Main draw loop
+// This function is called repeatedly to render the scene
 function draw() {
   background(200);
   if (bgImage) {
@@ -201,7 +233,7 @@ function draw() {
     let dy = (height - drawHeight) / 2;
     image(bgImage, dx, dy, drawWidth, drawHeight);
 
-    // Draw a warning text above the progress bar
+
     fill(255);
     noStroke();
     textSize(18);
@@ -211,6 +243,8 @@ function draw() {
   }
 
   let progress = 0;
+
+  // See: https://p5js.org/reference/#/p5.SoundFile/currentTime
   let curTime = 0;
   if (song && song.isLoaded()) {
     if (!userIsDragging) {
@@ -264,13 +298,17 @@ function draw() {
   }
 
   // Brightness and scaling (music rhythm)
+  // See: https://p5js.org/reference/#/p5.Amplitude/getLevel
   let level = amplitude.getLevel();
   let brightnessFactor = map(level, 0, 0.2, 0.9, 3.5, true);
   let scaleFactorCircle = map(level, 0, 0.2, 0.9, 3.5, true);
 
+
   push();
+    // Apply zoom and centering
   applyTransform();
 
+    // Draw each visual object
   for (let r of rects) {
     r.setBrightness(brightnessFactor);
     r.draw();
@@ -294,6 +332,8 @@ function draw() {
   drawTimeBarLabel();
 }
 
+// Snowflake animation logic (object spawn, update, draw)
+// See: https://p5js.org/reference/#/p5/random
 function drawSnowflakes() {
 
   if (isPlaying) {
@@ -306,6 +346,10 @@ function drawSnowflakes() {
   for (let flake of snowflakes) flake.draw();
 }
 
+// ---- Custom Classes for Animation ----
+
+// Snowflake animation class
+// See: https://p5js.org/reference/#/p5/ellipse
 class Snowflake {
   constructor() {
     this.x = random(width);
@@ -352,6 +396,7 @@ function timeFormat(sec) {
 
 function onProgressInput() {}
 
+// Initialize rectangle objects
 function setupRects() {
   rects = [];
   for (let [x, y, w, h, fillColor, borderColor, borderWidth] of rectRawData) {
@@ -363,7 +408,7 @@ function setupRects() {
     ));
   }
 }
-
+// Initialize half-circle objects
 function setupHalfCircles() {
   halfCircles = [];
   for (let [x, y, r, fillColor, borderColor, borderWidth] of halfCircleRawData) {
@@ -372,19 +417,26 @@ function setupHalfCircles() {
     ));
   }
 }
-
+// Initialize split-circle objects
 function setupCircles() {
-  appearOrder = rawData.map((d, i) => [i, d[1]]).sort((a, b) => b[1] - a[1]).map(pair => pair[0]);
-  fallOrder = rawData.map((d, i) => [i, d[1]]).sort((a, b) => a[1] - b[1]).map(pair => pair[0]);
+  appearOrder = splitCircleRawData.map((d, i) => [i, d[1]]).sort((a, b) => b[1] - a[1]).map(pair => pair[0]);
+  fallOrder = splitCircleRawData.map((d, i) => [i, d[1]]).sort((a, b) => a[1] - b[1]).map(pair => pair[0]);
   circles = [];
-  for (let [x, y, r, angle, leftRatio] of rawData) {
+  for (let [x, y, r, angle, leftRatio] of splitCircleRawData) {
     let c = new SplitCircle(
+            // Position of the circle and radius
       x, y, r,
+            // Ratio of left color area to total area
       leftRatio,
+            // Left color
       [251, 91, 99],
+            // Right color
       [109, 173, 123],
+            // Border color
       [62, 58, 47],
+            // Border width
       4,
+            // The angle of the dividing line
       angle
     );
     c.visible = false;
@@ -393,6 +445,12 @@ function setupCircles() {
 }
 
 // Play button logic Start/Pause/Continue
+// Various helper and initialization functions omitted for brevity...
+// (setupRects, setupHalfCircles, setupCircles, setupTransform, applyTransform, etc.)
+
+
+// Playback state toggle (play/pause/continue), for button event
+// See: https://p5js.org/reference/#/p5.SoundFile/play
 function togglePlay() {
   if (playState === "start" || playState === "continue") {
     if (song && song.isLoaded()) {
@@ -417,6 +475,8 @@ function togglePlay() {
 }
 
 // End/reset
+// Handle music end event (stop, reset UI)
+// See: https://p5js.org/reference/#/p5.SoundFile/onended
 function onMusicEnded() {
   isPlaying = false;
   playState = "start";
@@ -426,6 +486,7 @@ function onMusicEnded() {
   }, 3000);
 }
 
+// Compute scale factor and offset to fit base canvas into actual window
 function setupTransform() {
   let scaleX = width / baseWidth;
   let scaleY = height / baseHeight;
@@ -434,11 +495,13 @@ function setupTransform() {
   offsetY = (height - baseHeight * scaleFactor) / 2;
 }
 
+// Apply computed transform to the canvas
 function applyTransform() {
   translate(offsetX, offsetY);
   scale(scaleFactor);
 }
 
+// Custom class for split circles with a dividing angle
 class SplitCircle {
   constructor(x, y, r, leftRatio, leftColor, rightColor, borderColor, borderWidth, angle = 0) {
     this.x = x;
@@ -453,7 +516,7 @@ class SplitCircle {
     this.borderColor = borderColor;
     this.displayBorderColor = borderColor.slice();
     this.borderWidth = borderWidth;
-    this.angle = angle;
+    this.angle = angle;// Angle for the dividing line in radians
     this.visible = false;
 
     this.originY = y;
@@ -504,6 +567,7 @@ class SplitCircle {
     }
   }
 
+    // Method to display the split circle
   display() {
     push();
     let d = this.r * 2;
@@ -512,16 +576,20 @@ class SplitCircle {
     noStroke();
     ellipse(this.x, drawY, d, d);
 
+        // Compute division vector based on angle
     let normalX = cos(this.angle);
     let normalY = sin(this.angle);
     let threshold = (2 * this.leftRatio - 1) * this.r;
 
+        // Draw left-colored segment
     fill(...this.displayLeftColor);
     beginShape();
     let step = 0.05;
     for (let a = 0; a <= TWO_PI + step; a += step) {
       let dx = cos(a) * this.r;
       let dy = sin(a) * this.r;
+
+            // Check if the point is on the left side of the dividing line
       let dot = dx * normalX + dy * normalY;
       if (dot < threshold) {
         vertex(this.x + dx, drawY + dy);
@@ -537,6 +605,7 @@ class SplitCircle {
   }
 }
 
+// Class for full rectangles
 class Rect {
   constructor(x, y, width, height, fillColor, borderColor, borderWidth = 1) {
     this.x = x;
@@ -563,6 +632,7 @@ class Rect {
   }
 }
 
+// Class for top half-circle
 class HalfCircle {
   constructor(x, y, r, fillColor, borderColor, borderWidth = 1) {
     this.x = x;
