@@ -9,6 +9,7 @@ let playButton;
 let resetButton;
 let progressSlider;
 let isPlaying = false;
+let curTime = 0;
 
 let baseWidth = 800;
 let baseHeight = 1300;
@@ -134,17 +135,19 @@ function setup() {
   // --- 进度条 Progress Bar ---
   progressSlider = createSlider(0, 1, 0, 0.001);
   positionProgressSlider();
-  progressSlider.attribute('disabled', true);
+
   progressSlider.input(onProgressInput);
-  progressSlider.mousePressed(() => userIsDragging = true);
-  progressSlider.mouseReleased(() => {
-    userIsDragging = false;
-    if (song && song.isLoaded()) {
-      let newTime = progressSlider.value() * song.duration();
-      song.jump(newTime);
-      if (!isPlaying && playState === "pause") pausedAt = newTime;
-    }
-  });
+progressSlider.mousePressed(() => userIsDragging = true);
+progressSlider.mouseReleased(() => {
+  userIsDragging = false;
+  if (song && song.isLoaded()) {
+    let newTime = progressSlider.value() * song.duration();
+    song.jump(newTime); // 跳转时间
+    pausedAt = newTime;
+    // 不要在这里更改isPlaying
+  }
+});
+
 
   song.onended(onMusicEnded);
   if (song && song.isLoaded()) {
@@ -198,6 +201,15 @@ function draw() {
     let dx = (width - drawWidth) / 2;
     let dy = (height - drawHeight) / 2;
     image(bgImage, dx, dy, drawWidth, drawHeight);
+
+// Draw a warning text above the progress bar
+fill(255);
+noStroke();
+textSize(18);
+textAlign(CENTER, BOTTOM);
+text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 2, windowHeight - 60);
+
+    
   }
 
   let progress = 0;
@@ -214,25 +226,19 @@ function draw() {
     }
   }
 
-  // 播放按钮三态
+  
   if (playButton) {
-    if (playState === "start") playButton.html("Start");
-    if (playState === "pause") playButton.html("Continue");
-    if (playState === "playing") playButton.html("Pause");
+    if (!isPlaying) playButton.html("Continue");
+    if (isPlaying) playButton.html("Pause");
   }
 
   // 雪花触发逻辑
-  if (curTime >= snowStartTime && !snowing && !songEnded) {
+  if (curTime >= snowStartTime) {
     snowing = true;
     snowPause = false;
     snowTriggered = true;
   }
-  if ((songEnded || curTime === 0) && snowing) {
-    snowing = false;
-    snowflakes = [];
-    snowTriggered = false;
-  }
-
+  
   // 圆出现
   let appearCount = Math.floor(curTime / appearInterval);
   for (let i = 0; i < circles.length; i++) {
@@ -259,7 +265,7 @@ function draw() {
     }
   }
 
-  // 亮度与缩放 音乐律动（范围修改！）
+  // 亮度与缩放 音乐律动范围修改！
   let level = amplitude.getLevel();
   let brightnessFactor = map(level, 0, 0.2, 0.9, 3.5, true);
   let scaleFactorCircle = map(level, 0, 0.2, 0.9, 3.5, true);
@@ -292,7 +298,7 @@ function draw() {
 
 function drawSnowflakes() {
 
-  if (isPlaying && !snowPause) {
+  if (isPlaying) {
     if (random() < 0.4) snowflakes.push(new Snowflake());
     for (let flake of snowflakes) flake.update();
 
