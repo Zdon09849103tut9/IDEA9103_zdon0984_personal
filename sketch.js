@@ -26,14 +26,14 @@ let appearOrder = [];
 let fallOrder = [];
 let songEnded = false;
 
-// 雪花相关
+// Snowflake related
 let snowflakes = [];
 let snowing = false;
 let snowPause = false;
 let snowTriggered = false;
 let snowStartTime = 20;
 
-// 播放状态控制
+// Playback state control
 let playState = "start"; // "start", "pause", "continue"
 let pausedAt = 0;
 
@@ -83,7 +83,7 @@ function setup() {
   setupCircles();
   amplitude = new p5.Amplitude();
 
-  // --- 播放/暂停/继续 按钮 Play/Pause/Continue button ---
+  // Play/Pause/Continue button
   playButton = createButton("Start");
   playButton.position(20, 20);
   playButton.style('background-color', '#aaa');
@@ -98,7 +98,7 @@ function setup() {
   playButton.mouseOver(() => { playButton.style('background-color', '#ddd'); });
   playButton.mouseOut(() => { playButton.style('background-color', '#aaa'); });
 
-  // --- 复位按钮 Reset button ---
+  // Reset button
   resetButton = createButton("Reset");
   resetButton.position(140, 20);
   resetButton.style('background-color', '#e34');
@@ -108,14 +108,14 @@ function setup() {
   resetButton.style('padding', '8px 24px');
   resetButton.style('border-radius', '8px');
   resetButton.style('transition', 'background-color 0.2s');
-  // 关键改动：点击刷新网页
+  // Key change: refresh the page on click
   resetButton.mousePressed(() => {
     location.reload();
   });
   resetButton.mouseOver(() => { resetButton.style('background-color', '#ff7676'); });
   resetButton.mouseOut(() => { resetButton.style('background-color', '#e34'); });
 
-  // --- 音量滑块与喇叭图标 Volume slider & icon ---
+  // Volume slider & icon
   let g = createGraphics(24, 24);
   g.noStroke();
   g.fill(255);
@@ -132,22 +132,21 @@ function setup() {
     if (song && song.isLoaded()) song.setVolume(volumeSlider.value());
   });
 
-  // --- 进度条 Progress Bar ---
+  // Progress Bar
   progressSlider = createSlider(0, 1, 0, 0.001);
   positionProgressSlider();
 
   progressSlider.input(onProgressInput);
-progressSlider.mousePressed(() => userIsDragging = true);
-progressSlider.mouseReleased(() => {
-  userIsDragging = false;
-  if (song && song.isLoaded()) {
-    let newTime = progressSlider.value() * song.duration();
-    song.jump(newTime); // 跳转时间
-    pausedAt = newTime;
-    // 不要在这里更改isPlaying
-  }
-});
-
+  progressSlider.mousePressed(() => userIsDragging = true);
+  progressSlider.mouseReleased(() => {
+    userIsDragging = false;
+    if (song && song.isLoaded()) {
+      let newTime = progressSlider.value() * song.duration();
+      song.jump(newTime); // Seek time
+      pausedAt = newTime;
+      // Do not change isPlaying here
+    }
+  });
 
   song.onended(onMusicEnded);
   if (song && song.isLoaded()) {
@@ -202,14 +201,13 @@ function draw() {
     let dy = (height - drawHeight) / 2;
     image(bgImage, dx, dy, drawWidth, drawHeight);
 
-// Draw a warning text above the progress bar
-fill(255);
-noStroke();
-textSize(18);
-textAlign(CENTER, BOTTOM);
-text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 2, windowHeight - 60);
+    // Draw a warning text above the progress bar
+    fill(255);
+    noStroke();
+    textSize(18);
+    textAlign(CENTER, BOTTOM);
+    text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 2, windowHeight - 60);
 
-    
   }
 
   let progress = 0;
@@ -226,20 +224,20 @@ text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 
     }
   }
 
-  
+
   if (playButton) {
     if (!isPlaying) playButton.html("Continue");
     if (isPlaying) playButton.html("Pause");
   }
 
-  // 雪花触发逻辑
+  // Snowflake trigger logic
   if (curTime >= snowStartTime) {
     snowing = true;
     snowPause = false;
     snowTriggered = true;
   }
   
-  // 圆出现
+  // Circles appear
   let appearCount = Math.floor(curTime / appearInterval);
   for (let i = 0; i < circles.length; i++) {
     circles[appearOrder[i]].visible = i < appearCount;
@@ -248,7 +246,7 @@ text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 
     }
   }
 
-  // 圆下落
+  // Circles fall
   let fallCount = 0;
   if (curTime >= fallInitTime) {
     fallCount = Math.floor((curTime - fallInitTime) / fallInterval) + 1;
@@ -265,7 +263,7 @@ text("Notice: Progress bar has a known sync bug, please ignore.", windowWidth / 
     }
   }
 
-  // 亮度与缩放 音乐律动范围修改！
+  // Brightness and scaling (music rhythm)
   let level = amplitude.getLevel();
   let brightnessFactor = map(level, 0, 0.2, 0.9, 3.5, true);
   let scaleFactorCircle = map(level, 0, 0.2, 0.9, 3.5, true);
@@ -394,7 +392,7 @@ function setupCircles() {
   }
 }
 
-// ---- 播放按钮逻辑 Start/Pause/Continue ----
+// Play button logic Start/Pause/Continue
 function togglePlay() {
   if (playState === "start" || playState === "continue") {
     if (song && song.isLoaded()) {
@@ -418,13 +416,13 @@ function togglePlay() {
   }
 }
 
-// ---- 结束重置 ----
+// End/reset
 function onMusicEnded() {
   isPlaying = false;
   playState = "start";
   songEnded = true;
   setTimeout(() => {
-    // location.reload(); // 不自动刷新
+    // location.reload(); // Do not auto-refresh
   }, 3000);
 }
 
